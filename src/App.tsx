@@ -65,6 +65,8 @@ interface D3Link extends d3.SimulationLinkDatum<D3Node> {
 
 const ForceGraph: React.FC<ForceGraphProps> = ({ data, onNodeSelect, selectedItems }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   const availableNodes = useMemo(() => {
     if (selectedItems.length === 0) {
@@ -79,14 +81,24 @@ const ForceGraph: React.FC<ForceGraphProps> = ({ data, onNodeSelect, selectedIte
   }, [data, selectedItems]);
 
   useEffect(() => {
-    if (!data || !svgRef.current) return;
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const { width } = containerRef.current.getBoundingClientRect();
+        setDimensions({ width, height: Math.min(600, width * 0.75) });
+      }
+    };
 
-    const width = 600;
-    const height = 400;
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
+
+  useEffect(() => {
+    if (!data || !svgRef.current || dimensions.width === 0) return;
 
     const svg = d3.select(svgRef.current)
-      .attr('width', width)
-      .attr('height', height);
+      .attr('width', dimensions.width)
+      .attr('height', dimensions.height);
 
     svg.selectAll("*").remove();
 
@@ -102,9 +114,9 @@ const ForceGraph: React.FC<ForceGraphProps> = ({ data, onNodeSelect, selectedIte
 
     const simulation = d3.forceSimulation<D3Node>(nodes)
       .force("link", d3.forceLink<D3Node, D3Link>(links).id(d => d.name))
-      .force("charge", d3.forceManyBody().strength(-200))
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(50));
+      .force("charge", d3.forceManyBody().strength(-300))
+      .force("center", d3.forceCenter(dimensions.width / 2, dimensions.height / 2))
+      .force("collision", d3.forceCollide().radius(60));
 
     const link = svg.selectAll("line")
       .data(links)
@@ -115,28 +127,43 @@ const ForceGraph: React.FC<ForceGraphProps> = ({ data, onNodeSelect, selectedIte
 
     const node = svg.selectAll("g")
       .data(nodes)
-      .enter().append("g")
-      .call(d3.drag<SVGGElement, D3Node>()
-        .on("start", dragstarted)
-        .on("drag", dragged)
-        .on("end", dragended));
+      .enter().append("g");
 
     node.append("circle")
-      .attr("r", d => d.children ? 30 : 20)
+      .attr("r", d => d.children ? 40 : 30)
       .style("fill", d => {
         if (d.children) return "#69b3a2";
         return selectedItems.includes(d.name) ? "#e74c3c" : "#3498db";
       })
+      .style("stroke", "#fff")
+      .style("stroke-width", 2)
       .on("click", (event: MouseEvent, d: D3Node) => onNodeSelect(d.name));
 
-    node.append("text")
+    const textBackground = node.append("rect")
+      .attr("fill", "white")
+      .attr("opacity", 0.8);
+
+    const text = node.append("text")
       .text(d => d.name)
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'central')
-      .attr('font-size', '10px')
+      .attr('font-size', '12px')
       .attr('font-weight', 'bold')
-      .attr('fill', 'white')
+      .attr('fill', 'black')
       .style('pointer-events', 'none');
+
+    text.each(function(this: SVGTextElement) {
+      const bbox = this.getBBox();
+      const padding = 4;
+      d3.select(this.parentNode as d3.BaseType)
+        .select("rect")
+        .attr("x", bbox.x - padding)
+        .attr("y", bbox.y - padding)
+        .attr("width", bbox.width + (padding * 2))
+        .attr("height", bbox.height + (padding * 2))
+        .attr("rx", 4)
+        .attr("ry", 4);
+    });
 
     simulation.on("tick", () => {
       link
@@ -145,28 +172,30 @@ const ForceGraph: React.FC<ForceGraphProps> = ({ data, onNodeSelect, selectedIte
         .attr("x2", d => d.target.x!)
         .attr("y2", d => d.target.y!);
 
-      node.attr("transform", d => `translate(${d.x},${d.y})`);
+      node.attr("transform", d => {
+        const x = Math.max(40, Math.min(dimensions.width - 40, d.x!));
+        const y = Math.max(40, Math.min(dimensions.height - 40, d.y!));
+        return `translate(${x},${y})`;
+      });
     });
 
-    function dragstarted(event: d3.D3DragEvent<SVGGElement, D3Node, D3Node>) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      event.subject.fx = event.subject.x;
-      event.subject.fy = event.subject.y;
-    }
+    simulation.on("end", () => {
+      nodes.forEach(node => {
+        node.fx = node.x;
+        node.fy = node.y;
+      });
+    });
 
-    function dragged(event: d3.D3DragEvent<SVGGElement, D3Node, D3Node>) {
-      event.subject.fx = event.x;
-      event.subject.fy = event.y;
-    }
+    return () => {
+      simulation.stop();
+    };
+  }, [data, onNodeSelect, selectedItems, dimensions, availableNodes]);
 
-    function dragended(event: d3.D3DragEvent<SVGGElement, D3Node, D3Node>) {
-      if (!event.active) simulation.alphaTarget(0);
-      event.subject.fx = null;
-      event.subject.fy = null;
-    }
-  }, [data, onNodeSelect, availableNodes, selectedItems]);
-
-  return <svg ref={svgRef}></svg>;
+  return (
+    <div ref={containerRef} style={{ width: '100%', maxWidth: '1024px', margin: '0 auto' }}>
+      <svg ref={svgRef}></svg>
+    </div>
+  );
 };
 
 const ITOMInteractiveMindMap: React.FC = () => {
