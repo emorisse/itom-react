@@ -94,7 +94,7 @@ const ForceGraph: React.FC<ForceGraphProps> = ({ data, onNodeSelect, selectedIte
   }, []);
 
   useEffect(() => {
-    if (!data || !svgRef.current || dimensions.width === 0) return;
+    if (!data || !svgRef.current || dimensions.width === 0 || selectedItems.length === 2) return;
 
     const svg = d3.select(svgRef.current)
       .attr('width', dimensions.width)
@@ -203,6 +203,22 @@ const ITOMInteractiveMindMap: React.FC = () => {
   const [summary, setSummary] = useState<string>('');
   const [activeTab, setActiveTab] = useState(0);
 
+  const availableTabs = useMemo(() => {
+    if (selectedItems.length === 0) {
+      return mindmapData.children;
+    } else if (selectedItems.length === 1) {
+      const availableItems = Object.keys(summaries)
+        .filter(key => key.split(',').includes(selectedItems[0]))
+        .flatMap(key => key.split(','))
+        .filter(item => item !== selectedItems[0]);
+
+      return mindmapData.children.filter(category =>
+        category.children!.some(item => availableItems.includes(item))
+      );
+    }
+    return [];
+  }, [selectedItems]);
+
   const handleNodeSelect = (item: string) => {
     setSelectedItems(prev => {
       let newSelection: string[];
@@ -237,46 +253,48 @@ const ITOMInteractiveMindMap: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4" style={{ maxWidth: '1024px' }}>
       <h1 className="text-3xl font-bold mb-6">ITOM Market Interactive Mind Map</h1>
       <div className="flex flex-col lg:flex-row">
-        <div className="w-full lg:w-2/3 pr-4">
-          <Tab.Group selectedIndex={activeTab} onChange={setActiveTab}>
-            <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/20 p-1">
-              {mindmapData.children.map((category) => (
-                <Tab
-                  key={category.name}
-                  className={({ selected }: { selected: boolean }) =>
-                    `w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-blue-700
-                    ${selected
-                      ? 'bg-white shadow'
-                      : 'text-blue-100 hover:bg-white/[0.12] hover:text-white'
-                    }`
-                  }
-                >
-                  {category.name}
-                </Tab>
-              ))}
-            </Tab.List>
-            <Tab.Panels className="mt-2">
-              {mindmapData.children.map((category, idx) => (
-                <Tab.Panel
-                  key={idx}
-                  className={
-                    'rounded-xl bg-white p-3 ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2'
-                  }
-                >
-                  <ForceGraph 
-                    data={category} 
-                    onNodeSelect={handleNodeSelect} 
-                    selectedItems={selectedItems}
-                  />
-                </Tab.Panel>
-              ))}
-            </Tab.Panels>
-          </Tab.Group>
-        </div>
-        <div className="w-full lg:w-1/3 pl-4 mt-4 lg:mt-0">
+        {selectedItems.length < 2 && (
+          <div className="w-full lg:w-2/3 mb-6 lg:mb-0">
+            <Tab.Group selectedIndex={activeTab} onChange={setActiveTab}>
+              <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/20 p-1">
+                {availableTabs.map((category) => (
+                  <Tab
+                    key={category.name}
+                    className={({ selected }: { selected: boolean }) =>
+                      `w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-blue-700
+                      ${selected
+                        ? 'bg-white shadow'
+                        : 'text-blue-100 hover:bg-white/[0.12] hover:text-white'
+                      }`
+                    }
+                  >
+                    {category.name}
+                  </Tab>
+                ))}
+              </Tab.List>
+              <Tab.Panels className="mt-2">
+                {availableTabs.map((category, idx) => (
+                  <Tab.Panel
+                    key={idx}
+                    className={
+                      'rounded-xl bg-white p-3 ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2'
+                    }
+                  >
+                    <ForceGraph 
+                      data={category} 
+                      onNodeSelect={handleNodeSelect} 
+                      selectedItems={selectedItems}
+                    />
+                  </Tab.Panel>
+                ))}
+              </Tab.Panels>
+            </Tab.Group>
+          </div>
+        )}
+        <div className="w-full lg:w-1/3 lg:pl-6">
           <div className="bg-white rounded-lg p-4 shadow">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Selected Items</h2>
@@ -306,4 +324,5 @@ const ITOMInteractiveMindMap: React.FC = () => {
     </div>
   );
 };
+
 export default ITOMInteractiveMindMap;
