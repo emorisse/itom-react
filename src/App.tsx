@@ -73,7 +73,7 @@ const ForceGraph: React.FC<ForceGraphProps> = ({ data, onNodeSelect, selectedIte
       return data.children!;
     } else if (selectedItems.length === 1) {
       return Object.keys(summaries)
-        .filter(key => key.split(',').includes(selectedItems[0]))
+        .filter(key => key.split(',').some(item => item === selectedItems[0]))
         .flatMap(key => key.split(','))
         .filter(item => item !== selectedItems[0] && data.children!.includes(item));
     }
@@ -208,7 +208,7 @@ const ITOMInteractiveMindMap: React.FC = () => {
       return mindmapData.children;
     } else if (selectedItems.length === 1) {
       const availableItems = Object.keys(summaries)
-        .filter(key => key.split(',').includes(selectedItems[0]))
+        .filter(key => key.split(',').some(item => item === selectedItems[0]))
         .flatMap(key => key.split(','))
         .filter(item => item !== selectedItems[0]);
 
@@ -227,8 +227,10 @@ const ITOMInteractiveMindMap: React.FC = () => {
       } else if (prev.length === 0) {
         newSelection = [item];
       } else if (prev.length === 1) {
-        const key = [prev[0], item].sort().join(',');
-        if (summaries[key]) {
+        const key = Object.keys(summaries).find(k => 
+          k.split(',').includes(prev[0]) && k.split(',').includes(item)
+        );
+        if (key) {
           newSelection = [prev[0], item];
           setSummary(summaries[key]);
         } else {
