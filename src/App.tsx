@@ -256,7 +256,8 @@ const ITOMInteractiveMindMap: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4" style={{ maxWidth: '1024px' }}>
-      <h1 className="text-3xl font-bold mb-6">ITOM Market Interactive Mind Map</h1>
+      <h1 className="text-3xl font-bold mb-6">Welcome to the ITOM Synergy Magic 8-Ball</h1>
+	<h2>Pick any two items different categories, and we'll give you AI-generated Wisdomish™ words!</h2>
       <div className="flex flex-col lg:flex-row">
         {selectedItems.length < 2 && (
           <div className="w-full lg:w-2/3 mb-6 lg:mb-0">
