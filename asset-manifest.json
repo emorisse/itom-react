@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/itom-react/static/css/main.e6c13ad2.css",
+    "main.css": "/itom-react/static/css/main.0fe53d21.css",
     "main.js": "/itom-react/static/js/main.4075db55.js",
     "static/js/453.c6ed0a3b.chunk.js": "/itom-react/static/js/453.c6ed0a3b.chunk.js",
     "index.html": "/itom-react/index.html",
-    "main.e6c13ad2.css.map": "/itom-react/static/css/main.e6c13ad2.css.map",
+    "main.0fe53d21.css.map": "/itom-react/static/css/main.0fe53d21.css.map",
     "main.4075db55.js.map": "/itom-react/static/js/main.4075db55.js.map",
     "453.c6ed0a3b.chunk.js.map": "/itom-react/static/js/453.c6ed0a3b.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.e6c13ad2.css",
+    "static/css/main.0fe53d21.css",
     "static/js/main.4075db55.js"
   ]
 }
