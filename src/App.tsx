@@ -1,3 +1,4 @@
+import './App.css';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Tab } from '@headlessui/react';
 import * as d3 from 'd3';
